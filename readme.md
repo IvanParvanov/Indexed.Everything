@@ -2,6 +2,7 @@
 Bracket notation property accessors in C#. 
 
 [![Build status](https://ci.appveyor.com/api/projects/status/8on5qlwsa21gs9cc?svg=true)](https://ci.appveyor.com/project/J0hnyBG/indexed-everything)
+[![codecov](https://codecov.io/gh/J0hnyBG/Indexed.Everything/branch/master/graph/badge.svg)](https://codecov.io/gh/J0hnyBG/Indexed.Everything)
 
 ## Usage
 
