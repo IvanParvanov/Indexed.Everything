@@ -1,15 +1,16 @@
 # Indexed Everything
-
 Bracket notation property accessors in C#. 
+
+[![Build status](https://ci.appveyor.com/api/projects/status/8on5qlwsa21gs9cc?svg=true)](https://ci.appveyor.com/project/J0hnyBG/indexed-everything)
 
 ## Usage
 
-```
+```C#
     IIndexed<Person> indexed = new Indexed<Person>(new Person());
     indexed["Name"] = "John Doe";
 ```
 
-```
+```C#
 /// <returns>
 ///     [SectionName] 
 ///     Property1=value1
