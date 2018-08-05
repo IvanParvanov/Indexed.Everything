@@ -10,6 +10,12 @@ namespace Indexed.Everything
 {
     public class Indexed<T> : Indexed, IIndexed<T>
     {
+        /// <summary>
+        /// Creates a new instance of <see cref="Indexed{T}"/>.
+        /// </summary>
+        /// <param name="instance">The object to index.</param>
+        /// <param name="throwOnMissing">Specifies whether <see cref="MissingMethodException"/> is thrown when a property was not found.</param>
+        /// <exception cref="ArgumentNullException">Whenever instance is null.</exception>
         public Indexed(T instance, bool throwOnMissing = true)
             : base(instance, throwOnMissing, null)
         {
@@ -28,6 +34,12 @@ namespace Indexed.Everything
         private readonly IReadOnlyList<string> propertyNames;
         private readonly IFunkyFactory funkyFactory;
 
+        /// <summary>
+        /// Creates a new instance of <see cref="Indexed"/>.
+        /// </summary>
+        /// <param name="instance">The object to index.</param>
+        /// <param name="throwOnMissing">Specifies whether <see cref="MissingMethodException"/> is thrown when a property was not found.</param>
+        /// <exception cref="ArgumentNullException">Whenever instance is null.</exception>
         public Indexed(object instance, bool throwOnMissing = true)
             : this(instance, throwOnMissing, null)
         {
@@ -78,7 +90,7 @@ namespace Indexed.Everything
 
                 if (this.ThrowOnMissing)
                 {
-                    throw new MissingMethodException(this.type.FullName, "Get_" + prop);
+                    throw new MissingMethodException(this.type.FullName, $"{prop}_Get");
                 }
 
                 return null;
@@ -89,7 +101,7 @@ namespace Indexed.Everything
                 this.valueFactories.TryGetValue(prop, out IGetSetPair valueSetter);
                 if (this.ThrowOnMissing && valueSetter?.Set == null)
                 {
-                    throw new MissingMethodException(this.type.FullName, "Set_" + prop);
+                    throw new MissingMethodException(this.type.FullName, $"{prop}_Set");
                 }
 
                 object finalValue = value;

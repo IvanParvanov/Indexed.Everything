@@ -1,9 +1,9 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Runtime.Caching;
 
 using Indexed.Everything.Contracts;
 
@@ -11,14 +11,16 @@ namespace Indexed.Everything
 {
     internal class FunkyFactory : IFunkyFactory
     {
-        private static readonly ConcurrentDictionary<string, IReadOnlyDictionary<string, IGetSetPair>> ValueFactoryCache;
+        private static readonly MemoryCache Cache;
+        private static readonly CacheItemPolicy CacheItemPolicy;
         private static readonly IReadOnlyDictionary<Type, Func<object>> PrimitiveTypeConstructors;
         private static readonly ParameterExpression InstanceParameter;
         private static readonly ParameterExpression ValueParameter;
 
         static FunkyFactory()
         {
-            ValueFactoryCache = new ConcurrentDictionary<string, IReadOnlyDictionary<string, IGetSetPair>>();
+            Cache = MemoryCache.Default;
+            CacheItemPolicy = new CacheItemPolicy { SlidingExpiration = new TimeSpan(0, 30, 0) };
             InstanceParameter = Expression.Parameter(typeof(object));
             ValueParameter = Expression.Parameter(typeof(object));
             PrimitiveTypeConstructors = new Dictionary<Type, Func<object>>
@@ -48,24 +50,22 @@ namespace Indexed.Everything
                 throw new ArgumentNullException(nameof(type));
             }
 
-            if (ValueFactoryCache.TryGetValue(type.FullName, out IReadOnlyDictionary<string, IGetSetPair> valueFactories))
+            IReadOnlyDictionary<string, IGetSetPair> Get()
             {
-                return valueFactories;
+                var factories = new Dictionary<string, IGetSetPair>();
+
+                IEnumerable<PropertyInfo> props = type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                                                      .Where(p => p.DeclaringType?.FullName != typeof(Indexed).FullName);
+                foreach (PropertyInfo prop in props)
+                {
+                    IGetSetPair functions = this.CompilePropertyMethods(prop);
+                    factories.Add(prop.Name, functions);
+                }
+
+                return factories;
             }
 
-            Dictionary<string, IGetSetPair> factories = new Dictionary<string, IGetSetPair>();
-
-            IEnumerable<PropertyInfo> props = type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
-                                                  .Where(p => p.DeclaringType?.FullName != typeof(Indexed).FullName);
-            foreach (PropertyInfo prop in props)
-            {
-                IGetSetPair functions = this.CompilePropertyMethods(prop);
-                factories.Add(prop.Name, functions);
-            }
-
-            ValueFactoryCache[type.FullName] = factories;
-
-            return factories;
+            return GetOrAdd(type, Get);
         }
 
         public object GetDefaultValue(Type type)
@@ -135,6 +135,19 @@ namespace Indexed.Everything
                                                          .Compile();
 
             return compiledGet;
+        }
+
+        private static T GetOrAdd<T>(Type t, Func<T> getter) where T : class
+        {
+            string key = "æ" + t.FullName;
+            if (Cache.Contains(key))
+            {
+                return Cache.Get(key) as T;
+            }
+
+            T value = getter();
+            Cache.Add(key, value, CacheItemPolicy);
+            return value;
         }
     }
 }
