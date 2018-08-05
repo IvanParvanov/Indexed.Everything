@@ -34,6 +34,7 @@ namespace Indexed.Everything
                                             { typeof(long), () => new long() },
                                             { typeof(ulong), () => new ulong() },
                                             { typeof(double), () => new double() },
+                                            { typeof(decimal), () => new decimal() },
                                             { typeof(float), () => new float() },
                                             { typeof(IntPtr), () => new IntPtr() },
                                             { typeof(UIntPtr), () => new UIntPtr() },

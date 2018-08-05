@@ -223,3 +223,6 @@ bower_components/
 .bin/
 .vscode/
 *.ide
+codecov.sh
+results.xml
+TestResult.xml

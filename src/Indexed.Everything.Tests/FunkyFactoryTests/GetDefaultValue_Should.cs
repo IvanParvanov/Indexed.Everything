@@ -35,7 +35,7 @@ namespace Indexed.Everything.Tests.FunkyFactoryTests
         public void Create_DefaultValue(Type type)
         {
             // Arrange
-            object expected = type.IsPrimitive ? Activator.CreateInstance(type) : null;
+            object expected = type.IsPrimitive || type == typeof(decimal)? Activator.CreateInstance(type) : null;
 
             // Act
             object actual = this.sut.GetDefaultValue(type);
