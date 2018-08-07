@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Caching;
+using System.Threading;
 
 using AutoFixture;
 
@@ -12,7 +14,7 @@ using NUnit.Framework;
 namespace Indexed.Everything.Tests.FunkyFactoryTests
 {
     [TestFixture]
-    internal class BuildGetSetFuncs_Should
+    internal class GetPropertyAccessorFuncs_Should
     {
         private readonly FunkyFactory sut = new FunkyFactory();
         private readonly Fixture fixture = new Fixture();
@@ -62,7 +64,7 @@ namespace Indexed.Everything.Tests.FunkyFactoryTests
         public void ReturnWorkingSetters_ForEachPublicInstanceProperty()
         {
             // Arrange
-            var i = 0;
+            int i = 0;
             object[] expectedValues = { this.fixture.Create<int>(), this.fixture.Create<string>() };
             TestPerson instance = new TestPerson();
             IReadOnlyDictionary<string, IGetSetPair> expected = TestHelper.PersonPropertyAccesors
@@ -85,6 +87,21 @@ namespace Indexed.Everything.Tests.FunkyFactoryTests
                 Assert.AreEqual(expectedValues[i], actualValue);
                 i++;
             }
+        }
+
+        [Test]
+        public void Cache_Results()
+        {
+            // Arrange
+            IReadOnlyDictionary<string, IGetSetPair> expected = this.sut.GetPropertyAccessorFuncs(typeof(GetPropertyAccessorFuncs_Should));
+            MemoryCache cache = MemoryCache.Default;
+            string key = $"æ{typeof(GetPropertyAccessorFuncs_Should).FullName}";
+
+            // Act & Assert
+            Assert.IsTrue(cache.Contains(key));
+
+            object actual = cache.Get(key);
+            Assert.AreSame(expected, actual);
         }
     }
 }

@@ -7,6 +7,11 @@ namespace Indexed.Everything.Tests.FunkyFactoryTests
     [TestFixture]
     internal class GetDefaultValue_Should
     {
+        // ReSharper disable UnusedMember.Local
+        private enum MockedEnum { }
+        private struct MockedStruct  { }
+        private delegate void MockedDelegate();
+
         private static readonly Type[] TypesToBeTested =
         {
             typeof(int),
@@ -26,7 +31,10 @@ namespace Indexed.Everything.Tests.FunkyFactoryTests
             typeof(double),
             typeof(float),
             typeof(string),
-            typeof(GetDefaultValue_Should)
+            typeof(GetDefaultValue_Should),
+            typeof(MockedDelegate),
+            typeof(MockedEnum),
+            typeof(MockedStruct),
         };
 
         private readonly FunkyFactory sut = new FunkyFactory();
@@ -35,7 +43,7 @@ namespace Indexed.Everything.Tests.FunkyFactoryTests
         public void Create_DefaultValue(Type type)
         {
             // Arrange
-            object expected = type.IsPrimitive || type == typeof(decimal)? Activator.CreateInstance(type) : null;
+            object expected = type.IsValueType || type == typeof(decimal) ? Activator.CreateInstance(type) : null;
 
             // Act
             object actual = this.sut.GetDefaultValue(type);

@@ -13,42 +13,47 @@ namespace Indexed.Everything
     {
         private static readonly MemoryCache Cache;
         private static readonly CacheItemPolicy CacheItemPolicy;
-        private static readonly IReadOnlyDictionary<Type, Func<object>> PrimitiveTypeConstructors;
+        private static readonly IReadOnlyDictionary<Type, Func<object>> ValueTypeConstructors;
         private static readonly ParameterExpression InstanceParameter;
         private static readonly ParameterExpression ValueParameter;
+        private readonly MethodInfo constructorMethod;
 
         static FunkyFactory()
         {
             Cache = MemoryCache.Default;
-            CacheItemPolicy = new CacheItemPolicy { SlidingExpiration = new TimeSpan(0, 30, 0) };
+            CacheItemPolicy = new CacheItemPolicy { SlidingExpiration = TimeSpan.FromMinutes(15) };
             InstanceParameter = Expression.Parameter(typeof(object));
             ValueParameter = Expression.Parameter(typeof(object));
-            PrimitiveTypeConstructors = new Dictionary<Type, Func<object>>
-                                        {
-                                            { typeof(bool), () => new bool() },
-                                            { typeof(char), () => new char() },
-                                            { typeof(byte), () => new byte() },
-                                            { typeof(sbyte), () => new sbyte() },
-                                            { typeof(short), () => new short() },
-                                            { typeof(ushort), () => new ushort() },
-                                            { typeof(int), () => new int() },
-                                            { typeof(uint), () => new uint() },
-                                            { typeof(long), () => new long() },
-                                            { typeof(ulong), () => new ulong() },
-                                            { typeof(double), () => new double() },
-                                            { typeof(decimal), () => new decimal() },
-                                            { typeof(float), () => new float() },
-                                            { typeof(IntPtr), () => new IntPtr() },
-                                            { typeof(UIntPtr), () => new UIntPtr() },
-                                        };
+            ValueTypeConstructors = new Dictionary<Type, Func<object>>
+                                    {
+                                        { typeof(bool), () => new bool() },
+                                        { typeof(char), () => new char() },
+                                        { typeof(byte), () => new byte() },
+                                        { typeof(sbyte), () => new sbyte() },
+                                        { typeof(short), () => new short() },
+                                        { typeof(ushort), () => new ushort() },
+                                        { typeof(int), () => new int() },
+                                        { typeof(uint), () => new uint() },
+                                        { typeof(long), () => new long() },
+                                        { typeof(ulong), () => new ulong() },
+                                        { typeof(double), () => new double() },
+                                        { typeof(decimal), () => new decimal() },
+                                        { typeof(float), () => new float() },
+                                        { typeof(string), () => null },
+                                        { typeof(IntPtr), () => new IntPtr() },
+                                        { typeof(UIntPtr), () => new UIntPtr() },
+                                    };
+            ;
+        }
+
+        public FunkyFactory()
+        {
+            this.constructorMethod = typeof(FunkyFactory).GetMethod(nameof(this.GetDefaultValueGeneric), BindingFlags.NonPublic | BindingFlags.Instance);
         }
 
         public IReadOnlyDictionary<string, IGetSetPair> GetPropertyAccessorFuncs(Type type)
         {
-            if (type == null)
-            {
-                throw new ArgumentNullException(nameof(type));
-            }
+            type = type ?? throw new ArgumentNullException(nameof(type));
 
             IReadOnlyDictionary<string, IGetSetPair> Get()
             {
@@ -65,27 +70,21 @@ namespace Indexed.Everything
                 return factories;
             }
 
-            return GetOrAdd(type, Get);
+            return GetOrAdd(type, "æ", Get);
         }
 
         public object GetDefaultValue(Type type)
         {
-            if (type == null)
-            {
-                throw new ArgumentNullException(nameof(type));
-            }
+            type = type ?? throw new ArgumentNullException(nameof(type));
 
-            return PrimitiveTypeConstructors.TryGetValue(type, out Func<object> ctor)
+            return ValueTypeConstructors.TryGetValue(type, out Func<object> ctor)
                 ? ctor()
-                : null;
+                : this.GetConstructor(type)();
         }
 
         internal IGetSetPair CompilePropertyMethods(PropertyInfo prop)
         {
-            if (prop == null)
-            {
-                throw new ArgumentNullException(nameof(prop));
-            }
+            prop = prop ?? throw new ArgumentNullException(nameof(prop));
 
             Type type = prop.ReflectedType;
             Action<object, object> setter = this.GetCompiledSetter(prop, type);
@@ -94,8 +93,34 @@ namespace Indexed.Everything
             return new GetSetPair(getter, setter, prop);
         }
 
-        protected virtual Action<object, object> GetCompiledSetter(PropertyInfo propInfo, Type type)
+        private Func<object> GetConstructor(Type type)
         {
+            Func<object> CompileConstructor()
+            {
+                if (!type.IsValueType)
+                {
+                    return () => null;
+                }
+
+                MethodInfo method = this.constructorMethod.MakeGenericMethod(type);
+
+                Func<object> result = Expression.Lambda<Func<object>>(Expression.Convert(Expression.Call(Expression.Constant(this), method), typeof(object))).Compile();
+                return result;
+            }
+
+            return GetOrAdd(type, "¬", CompileConstructor);
+        }
+
+        private T GetDefaultValueGeneric<T>() where T : new()
+        {
+            return new T();
+        }
+
+        private Action<object, object> GetCompiledSetter(PropertyInfo propInfo, Type type)
+        {
+            type = type ?? throw new ArgumentNullException(nameof(type));
+            propInfo = propInfo ?? throw new ArgumentNullException(nameof(propInfo));
+
             MethodInfo setMethod = propInfo.GetSetMethod();
             if (setMethod == null)
             {
@@ -115,7 +140,7 @@ namespace Indexed.Everything
             return compiledSet;
         }
 
-        protected virtual Func<object, object> GetCompiledGetter(PropertyInfo propInfo, Type type)
+        private Func<object, object> GetCompiledGetter(PropertyInfo propInfo, Type type)
         {
             type = type ?? throw new ArgumentNullException(nameof(type));
             propInfo = propInfo ?? throw new ArgumentNullException(nameof(propInfo));
@@ -137,9 +162,9 @@ namespace Indexed.Everything
             return compiledGet;
         }
 
-        private static T GetOrAdd<T>(Type t, Func<T> getter) where T : class
+        private static T GetOrAdd<T>(Type t, string cachePrefix, Func<T> getter) where T : class
         {
-            string key = "æ" + t.FullName;
+            string key = cachePrefix + t.FullName;
             if (Cache.Contains(key))
             {
                 return Cache.Get(key) as T;
