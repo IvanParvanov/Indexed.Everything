@@ -56,6 +56,22 @@ namespace Indexed.Everything.Tests.IndexedTests
         }
 
         [Test]
+        public void Return_CorrectValueFromFunc_WhenAnonymousAndDynamic()
+        {
+            // Arrange
+            dynamic instance = new
+                               {
+                                   Name = this.fixture.Create<string>(),
+                                   Age = this.fixture.Create<int>()
+                               };
+            Indexed sut = new Indexed(instance, true);
+
+            // Act & Assert
+            Assert.AreSame(instance.Name, sut.Get(nameof(instance.Name)));
+            Assert.AreEqual(instance.Age, sut.Get(nameof(instance.Age)));
+        }
+
+        [Test]
         public void Throw_MissingMethodException_WhenShouldThrowOnMissingIsTrueAndMethodNotFound()
         {
             // Arrange
@@ -66,7 +82,7 @@ namespace Indexed.Everything.Tests.IndexedTests
             // Act & Assert
             MissingMethodException ex = Assert.Throws<MissingMethodException>(() =>
                                                                               {
-                                                                                  object a = sut[TestConst.InvalidPropertyName];
+                                                                                  object _ = sut[TestConst.InvalidPropertyName];
                                                                               });
 
             StringAssert.Contains(TestConst.InvalidPropertyName, ex.Message);

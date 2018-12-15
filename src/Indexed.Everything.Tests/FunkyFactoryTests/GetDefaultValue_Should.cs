@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Numerics;
 
 using NUnit.Framework;
 
@@ -7,7 +8,7 @@ namespace Indexed.Everything.Tests.FunkyFactoryTests
     [TestFixture]
     internal class GetDefaultValue_Should
     {
-        // ReSharper disable UnusedMember.Local
+        private interface IMockedInterface { }
         private enum MockedEnum { }
         private struct MockedStruct  { }
         private delegate void MockedDelegate();
@@ -32,9 +33,11 @@ namespace Indexed.Everything.Tests.FunkyFactoryTests
             typeof(float),
             typeof(string),
             typeof(GetDefaultValue_Should),
+            typeof(IMockedInterface),
             typeof(MockedDelegate),
             typeof(MockedEnum),
             typeof(MockedStruct),
+            typeof(BigInteger)
         };
 
         private readonly FunkyFactory sut = new FunkyFactory();
@@ -43,7 +46,7 @@ namespace Indexed.Everything.Tests.FunkyFactoryTests
         public void Create_DefaultValue(Type type)
         {
             // Arrange
-            object expected = type.IsValueType || type == typeof(decimal) ? Activator.CreateInstance(type) : null;
+            object expected = type.IsValueType  ? Activator.CreateInstance(type) : null;
 
             // Act
             object actual = this.sut.GetDefaultValue(type);

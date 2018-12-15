@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
+using AutoFixture;
+
 using Indexed.Everything.Contracts;
 
 using Moq;
@@ -12,6 +14,8 @@ namespace Indexed.Everything.Tests.Misc
 {
     internal static class TestHelper
     {
+        private static readonly Fixture Fixture = new Fixture();
+
         static TestHelper()
         {
             PropertyInfo[] props = typeof(TestPerson).GetProperties(BindingFlags.Public | BindingFlags.Instance);
@@ -29,6 +33,8 @@ namespace Indexed.Everything.Tests.Misc
         }
 
         public static IReadOnlyDictionary<string, IGetSetPair> PersonPropertyAccesors { get; }
+
+        public static TestPerson GetTestPerson() => Fixture.Create<TestPerson>();
 
         public static Mock<IFunkyFactory> GetMockedFunkyFactory()
         {

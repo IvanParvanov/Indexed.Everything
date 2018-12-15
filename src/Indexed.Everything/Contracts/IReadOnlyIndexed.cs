@@ -6,8 +6,6 @@ namespace Indexed.Everything.Contracts
     {
         bool ThrowOnMissing { get; set; }
 
-        KeyValuePair<string, object> this[int index] { get; }
-
         object Get(string prop);
 
         T Get<T>(string prop);

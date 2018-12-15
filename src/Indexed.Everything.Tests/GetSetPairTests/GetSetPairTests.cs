@@ -17,6 +17,7 @@ namespace Indexed.Everything.Tests.GetSetPairTests
                                                                 {
                                                                 };
 
+        // ReSharper disable once UnassignedGetOnlyAutoProperty
         public string Property { get; }
 
         [Test]

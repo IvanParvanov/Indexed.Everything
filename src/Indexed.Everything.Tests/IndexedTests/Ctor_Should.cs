@@ -46,21 +46,6 @@ namespace Indexed.Everything.Tests.IndexedTests
         }
 
         [Test]
-        public void Call_FactoryBuildGetSetFuncsMethodWithCorrectParamsOnce_WhenInherited()
-        {
-            // Arrange
-            Mock<IFunkyFactory> factoryMock = TestHelper.GetMockedFunkyFactory();
-            factoryMock.Setup(f => f.GetPropertyAccessorFuncs(It.IsAny<Type>()))
-                       .Returns(new Dictionary<string, IGetSetPair>());
-
-            // Act
-            MockIndexed sut = new MockIndexed(factoryMock.Object);
-
-            // Assert
-            factoryMock.Verify(x => x.GetPropertyAccessorFuncs(It.Is<Type>(t => t.FullName == typeof(MockIndexed).FullName)), Times.Once);
-        }
-
-        [Test]
         public void Call_FactoryBuildGetSetFuncsMethodWithCorrectparamsOnce()
         {
             // Arrange
@@ -68,7 +53,7 @@ namespace Indexed.Everything.Tests.IndexedTests
             Mock<IFunkyFactory> factoryMock = TestHelper.GetMockedFunkyFactory();
 
             // Act
-            Indexed sut = new Indexed(instance, true, factoryMock.Object);
+            Indexed _ = new Indexed(instance, true, factoryMock.Object);
 
             // Assert
             factoryMock.Verify(x => x.GetPropertyAccessorFuncs(It.Is<Type>(t => t.FullName == typeof(TestPerson).FullName)), Times.Once);
